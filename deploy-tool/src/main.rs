@@ -45,6 +45,9 @@ static CONFIG: OnceLock<Config> = OnceLock::new();
 // Bundled web-container-contract.wasm compiled during build
 const BUNDLED_CONTRACT_WASM: &[u8] = include_bytes!(env!("BUNDLED_CONTRACT_PATH"));
 
+// Bundled web-container-tool binary compiled during build
+const BUNDLED_TOOL: &[u8] = include_bytes!(env!("BUNDLED_TOOL_PATH"));
+
 /// Returns the repository root by walking up from the current directory
 /// until a `Cargo.toml` with `[workspace]` is found.
 pub fn get_repo_root() -> Result<PathBuf, Box<dyn Error>> {
@@ -120,6 +123,53 @@ fn get_contract_wasm() -> Result<Vec<u8>, Box<dyn Error>> {
     // Fall back to bundled contract
     println!("Using bundled web-container-contract");
     Ok(BUNDLED_CONTRACT_WASM.to_vec())
+}
+
+/// Gets the path to web-container-tool executable.
+/// Uses local repo version if available, otherwise extracts bundled version.
+fn get_web_container_tool() -> Result<PathBuf, Box<dyn Error>> {
+    // Check if local web-container-tool exists in repo
+    if let Ok(repo_root) = get_repo_root() {
+        let local_tool_dir = repo_root.join("web-container-tool");
+        if local_tool_dir.join("Cargo.toml").exists() {
+            println!("Building local web-container-tool...");
+            execute(Command::new("cargo").args([
+                "build",
+                "--release",
+                "--package",
+                "web-container-tool",
+            ]))?;
+            let tool_name = if cfg!(windows) {
+                "web-container-tool.exe"
+            } else {
+                "web-container-tool"
+            };
+            let local_tool = repo_root.join("target/release").join(tool_name);
+            if local_tool.exists() {
+                println!("Using local web-container-tool");
+                return Ok(local_tool);
+            }
+        }
+    }
+
+    // Fall back to bundled tool - extract to temp directory
+    println!("Using bundled web-container-tool");
+    let tool_name = if cfg!(windows) {
+        "web-container-tool.exe"
+    } else {
+        "web-container-tool"
+    };
+    let tool_path = env::temp_dir().join(tool_name);
+    fs::write(&tool_path, BUNDLED_TOOL)?;
+
+    // Make executable on Unix
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&tool_path, fs::Permissions::from_mode(0o755))?;
+    }
+
+    Ok(tool_path)
 }
 
 #[derive(Parser)]
@@ -199,11 +249,8 @@ fn web_container_sign(
         input.display(),
         output.display()
     );
-    execute(Command::new("cargo").args([
-        "run",
-        "--bin",
-        "web-container-tool",
-        "--",
+    let tool_path = get_web_container_tool()?;
+    execute(Command::new(tool_path).args([
         "sign",
         "--input",
         &input.to_string_lossy(),
@@ -218,7 +265,8 @@ fn web_container_sign(
 
 fn web_container_generate() -> Result<(), Box<dyn Error>> {
     println!("Generating web container keys...");
-    execute(Command::new("cargo").args(["run", "--bin", "web-container-tool", "--", "generate"]))
+    let tool_path = get_web_container_tool()?;
+    execute(Command::new(tool_path).args(["generate"]))
 }
 
 fn fdev_publish(
