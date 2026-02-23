@@ -20,11 +20,24 @@ macro_rules! println {
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub project: ProjectConfig,
+    pub app: AppConfig,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ProjectConfig {
     pub id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum AppConfig {
+    Dioxus {
+        #[serde(rename = "package-id")]
+        package_id: String,
+    },
+    Static {
+        folder: PathBuf,
+    },
 }
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
@@ -318,7 +331,24 @@ fn deploy(version: u32) -> Result<(), Box<dyn Error>> {
     let version_parsed: u32 = version_saved.parse().unwrap();
     let version_chosen = std::cmp::max(version_parsed, version);
 
-    let out = build_dx_app(contract_wasm.clone(), webapp_parameters.clone(), "pizza-ui")?;
+    // Get the output directory based on app type
+    let out = match &config().app {
+        AppConfig::Dioxus { package_id } => {
+            build_dx_app(contract_wasm.clone(), webapp_parameters.clone(), package_id)?
+        }
+        AppConfig::Static { folder } => {
+            let repo_root = get_repo_root()?;
+            let static_path = repo_root.join(folder);
+            if !static_path.exists() {
+                return Err(format!(
+                    "Static folder not found: {}",
+                    static_path.display()
+                )
+                .into());
+            }
+            static_path
+        }
+    };
 
     // Create the tar.xz archive
     let file = std::fs::File::create(&webapp_archive)?;
