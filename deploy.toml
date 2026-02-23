@@ -2,5 +2,5 @@
 id = "freenet-shared"
 
 [app]
-type = "dioxus"
-package-id = "pizza-ui"
+type = "static"
+folder = "test/"
