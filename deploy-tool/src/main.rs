@@ -42,6 +42,9 @@ pub enum AppConfig {
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
 
+// Bundled web-container-contract.wasm compiled during build
+const BUNDLED_CONTRACT_WASM: &[u8] = include_bytes!(env!("BUNDLED_CONTRACT_PATH"));
+
 /// Returns the repository root by walking up from the current directory
 /// until a `Cargo.toml` with `[workspace]` is found.
 pub fn get_repo_root() -> Result<PathBuf, Box<dyn Error>> {
@@ -94,6 +97,29 @@ fn default_storage_path(file: &str) -> PathBuf {
     p.push(&config().project.id);
     p.push(file);
     p
+}
+
+/// Gets the web-container-contract.wasm bytes.
+/// Uses local repo version if available, otherwise falls back to bundled version.
+fn get_contract_wasm() -> Result<Vec<u8>, Box<dyn Error>> {
+    // Check if local web-container-contract exists in repo
+    if let Ok(repo_root) = get_repo_root() {
+        let local_contract_dir = repo_root.join("web-container-contract");
+        if local_contract_dir.join("Cargo.toml").exists() {
+            println!("Building local web-container-contract...");
+            cargo_build("web-container-contract")?;
+            let local_wasm =
+                PathBuf::from("target/wasm32-unknown-unknown/release/web_container_contract.wasm");
+            if local_wasm.exists() {
+                println!("Using local web-container-contract");
+                return Ok(fs::read(local_wasm)?);
+            }
+        }
+    }
+
+    // Fall back to bundled contract
+    println!("Using bundled web-container-contract");
+    Ok(BUNDLED_CONTRACT_WASM.to_vec())
 }
 
 #[derive(Parser)]
@@ -388,12 +414,10 @@ fn initial_web_deploy() -> Result<(), Box<dyn Error>> {
         web_container_generate()?;
     }
 
-    cargo_build("web-container-contract")?;
-
-    let contract_wasm_src =
-        PathBuf::from("target/wasm32-unknown-unknown/release/web_container_contract.wasm");
+    // Get contract wasm (local or bundled)
+    let contract_wasm_bytes = get_contract_wasm()?;
     let contract_wasm = default_storage_path("web.contract.wasm");
-    std::fs::copy(contract_wasm_src, &contract_wasm)?;
+    fs::write(&contract_wasm, contract_wasm_bytes)?;
     let webapp_archive = default_storage_path("webapp.bootstrap.tar.xz");
     // Create an empty .tar.xz archive
     let file = std::fs::File::create(&webapp_archive)?;
