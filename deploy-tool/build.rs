@@ -11,8 +11,13 @@ fn main() {
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
+    // Use a separate target directory to avoid cargo lock conflicts
+    let nested_target_dir = out_dir.join("nested-target");
+
     // Build web-container-contract for wasm32-unknown-unknown
-    let status = Command::new("cargo")
+    let status = Command::new(env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
+        .env("CARGO_TARGET_DIR", &nested_target_dir)
+        .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .args([
             "build",
             "--release",
@@ -29,13 +34,15 @@ fn main() {
     }
 
     // Copy the wasm to OUT_DIR so include_bytes! can find it
-    let wasm_src = PathBuf::from("../target/wasm32-unknown-unknown/release/web_container_contract.wasm");
+    let wasm_src = nested_target_dir.join("wasm32-unknown-unknown/release/web_container_contract.wasm");
     let wasm_dst = out_dir.join("web_container_contract.wasm");
     fs::copy(&wasm_src, &wasm_dst).expect("Failed to copy wasm to OUT_DIR");
     println!("cargo:rustc-env=BUNDLED_CONTRACT_PATH={}", wasm_dst.display());
 
     // Build web-container-tool for native target
-    let status = Command::new("cargo")
+    let status = Command::new(env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
+        .env("CARGO_TARGET_DIR", &nested_target_dir)
+        .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .args([
             "build",
             "--release",
@@ -55,7 +62,7 @@ fn main() {
     } else {
         "web-container-tool"
     };
-    let tool_src = PathBuf::from("../target/release").join(tool_name);
+    let tool_src = nested_target_dir.join("release").join(tool_name);
     let tool_dst = out_dir.join(tool_name);
     fs::copy(&tool_src, &tool_dst).expect("Failed to copy web-container-tool to OUT_DIR");
     println!("cargo:rustc-env=BUNDLED_TOOL_PATH={}", tool_dst.display());
