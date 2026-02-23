@@ -250,23 +250,31 @@ fn web_container_sign(
         output.display()
     );
     let tool_path = get_web_container_tool()?;
-    execute(Command::new(tool_path).args([
-        "sign",
-        "--input",
-        &input.to_string_lossy(),
-        "--output",
-        &output.to_string_lossy(),
-        "--parameters",
-        &parameters.to_string_lossy(),
-        "--version",
-        &version.to_string(),
-    ]))
+    execute(
+        Command::new(tool_path)
+            .env("PROJECT_ID", &config().project.id)
+            .args([
+                "sign",
+                "--input",
+                &input.to_string_lossy(),
+                "--output",
+                &output.to_string_lossy(),
+                "--parameters",
+                &parameters.to_string_lossy(),
+                "--version",
+                &version.to_string(),
+            ]),
+    )
 }
 
 fn web_container_generate() -> Result<(), Box<dyn Error>> {
     println!("Generating web container keys...");
     let tool_path = get_web_container_tool()?;
-    execute(Command::new(tool_path).args(["generate"]))
+    execute(
+        Command::new(tool_path)
+            .env("PROJECT_ID", &config().project.id)
+            .args(["generate"]),
+    )
 }
 
 fn fdev_publish(

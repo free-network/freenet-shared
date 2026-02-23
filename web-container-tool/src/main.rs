@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 use ed25519_dalek::{Signature, Signer, SigningKey};
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -49,8 +50,9 @@ enum Commands {
 }
 
 fn default_keys_path() -> PathBuf {
+    let project_id = env::var("PROJECT_ID").expect("PROJECT_ID environment variable must be set");
     let mut p = dirs::config_dir().expect("Could not find config directory");
-    p.push("pizza-freenet");
+    p.push(project_id);
     p.push("web-container-keys.toml");
     p
 }
