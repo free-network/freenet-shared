@@ -409,8 +409,10 @@ fn deploy(version: u32) -> Result<(), Box<dyn Error>> {
     let webapp_metadata = default_storage_path("webapp.metadata");
     let webapp_parameters = default_storage_path("webapp.parameters");
 
-    let version_saved = std::fs::read_to_string(default_storage_path("version"))?;
-    let version_parsed: u32 = version_saved.parse().unwrap();
+    let version_path = default_storage_path("version");
+    let version_saved = std::fs::read_to_string(&version_path)
+        .expect(&format!("version file not found: {}", version_path.display()));
+    let version_parsed: u32 = version_saved.trim().parse().unwrap();
     let version_chosen = std::cmp::max(version_parsed, version);
 
     // Get the output directory based on app type
