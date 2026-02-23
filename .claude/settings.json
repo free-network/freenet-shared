@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "freenet@freenet-agent-skills": true
+  }
+}
