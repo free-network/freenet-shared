@@ -1,9 +1,11 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use clap::{Parser, Subcommand};
+use serde::Deserialize;
 use std::convert::Into;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::OnceLock;
 use std::{env, fs, io};
 use tar::Builder;
 
@@ -13,11 +15,70 @@ macro_rules! println {
     };
 }
 
-pub const PROJECT: &str = "pizza-freenet";
+// ─── Configuration ───────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct Config {
+    pub project: ProjectConfig,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ProjectConfig {
+    pub id: String,
+}
+
+static CONFIG: OnceLock<Config> = OnceLock::new();
+
+/// Returns the repository root by walking up from the current directory
+/// until a `Cargo.toml` with `[workspace]` is found.
+pub fn get_repo_root() -> Result<PathBuf, Box<dyn Error>> {
+    let mut current = env::current_dir()?;
+    loop {
+        let cargo_toml = current.join("Cargo.toml");
+        if cargo_toml.exists() {
+            let content = fs::read_to_string(&cargo_toml)?;
+            if content.contains("[workspace]") {
+                return Ok(current);
+            }
+        }
+        if !current.pop() {
+            return Err("Could not find repository root (no workspace Cargo.toml found)".into());
+        }
+    }
+}
+
+/// Reads the deploy.toml config file from the repository root.
+fn read_config() -> Result<Config, Box<dyn Error>> {
+    let repo_root = get_repo_root()?;
+    let config_path = repo_root.join("deploy.toml");
+    let content = fs::read_to_string(&config_path).map_err(|e| {
+        format!(
+            "Could not read config file at {}: {}",
+            config_path.display(),
+            e
+        )
+    })?;
+    let config: Config = toml::from_str(&content)?;
+    Ok(config)
+}
+
+/// Initializes the global config. Must be called before using `config()`.
+fn init_config() -> Result<(), Box<dyn Error>> {
+    let cfg = read_config()?;
+    CONFIG
+        .set(cfg)
+        .map_err(|_| "Config already initialized")?;
+    Ok(())
+}
+
+/// Returns a reference to the global config.
+pub fn config() -> &'static Config {
+    CONFIG.get().expect("Config not initialized. Call init_config() first.")
+}
 
 fn default_storage_path(file: &str) -> PathBuf {
     let mut p = dirs::config_dir().expect("Could not find config directory");
-    p.push(PROJECT);
+    p.push(&config().project.id);
     p.push(file);
     p
 }
@@ -362,6 +423,8 @@ fn merge_state(
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    init_config()?;
+
     let cli = Cli::parse();
     match cli.command {
         Commands::Deploy { version } => deploy(version),
