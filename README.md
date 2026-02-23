@@ -4,7 +4,7 @@ Shared tools and contracts for working with freenet apps
 
 # Using this in your repo
 
-Config example (deploy.toml in workspace root):
+Config example (deploy.toml in workspace root of your repo):
 
 ```toml
 [project]
@@ -21,13 +21,13 @@ type = "dioxus"
 package-id = "my-ui"
 ```
 
-Install tool globally
+Install tool globally (run from this repo)
 
 ```
 cargo install --path deploy-tool
 ```
 
-Run initial-web-deploy (will create the keys and web-container-contract):
+Run initial-web-deploy (run from your repo, will create the keys and web-container-contract):
 
 ```
 deploy-tool initial-web-deploy
