@@ -1,0 +1,57 @@
+[workspace]
+resolver = "2"
+members = [
+    "web-container-contract",
+    "web-container-tool",
+    "deploy-tool",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+# Serialization
+serde = { version = "1", features = ["derive"] }
+ciborium = "0.2"
+byteorder = "1"
+rusty-money = "0.5"
+
+# Cryptography
+ed25519-dalek = { version = "2.1.1", default-features = false, features = ["alloc", "serde"] }
+# For WASM contracts that only need verification
+ed25519-compact = { version = "2.1.1", default-features = false, features = ["std"] }
+blake3 = { version = "1.5.3", features = ["serde"] }
+x25519-dalek = { version = "2.0.0", features = ["static_secrets"] }
+curve25519-dalek = { version = "4.1.3" }
+rand = { version = "0.8.5", features = ["getrandom"], default-features = true }
+getrandom = { version = "0.2.16", features = ["js"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Utils
+thiserror = "1"
+base64 = "0.22.1"
+data-encoding = "2.3.3"
+bs58 = "0.5.1"
+
+# Freenet dependencies
+freenet-scaffold = "0.2.1"
+freenet-scaffold-macro = "0.2.1"
+freenet-stdlib = { version = "0.1.35", features = ["contract"] }
+
+# Web
+axum = "0.8.4"
+cfg-if = "1.0.0"
+console_error_panic_hook = "0.1.7"
+console_log = "1.0.0"
+http = "1.3.1"
+log = "0.4.27"
+simple_logger = "5.0.0"
+tokio = { version = "1.45.0", features = ["full"] }
+tower = { version = "0.5.2", features = ["full"] }
+tower-http = { version = "0.6.4", features = ["full"] }
+wasm-bindgen = "=0.2.108"
+
+dioxus = { version = "0.7.3" }

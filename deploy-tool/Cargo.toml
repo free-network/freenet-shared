@@ -1,0 +1,17 @@
+[package]
+name = "deploy-tool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ed25519-dalek = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+ciborium = { workspace = true }
+serde = { workspace = true }
+bs58 = "0.5"
+toml = "0.8"
+dirs = "6"
+rand = { version = "0.8", features = ["std_rng"] }
+tar = "0.4.44"
+xz2 = "0.1.7"
+byteorder.workspace = true

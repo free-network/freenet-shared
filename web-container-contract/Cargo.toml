@@ -1,0 +1,24 @@
+[package]
+name = "web-container-contract"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+byteorder = { workspace = true }
+ciborium = { workspace = true }
+freenet-stdlib = { workspace = true, features = ["contract"] }
+serde = { workspace = true }
+ed25519-dalek = { workspace = true }
+
+[dev-dependencies]
+rand = { version = "0.8", features = ["std_rng"] }
+# For tests that need key generation
+ed25519-dalek = { version = "2.1.1", features = ["rand_core"] }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["freenet-main-contract"]
+freenet-main-contract = []
+trace = ["freenet-stdlib/trace"]
