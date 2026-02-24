@@ -502,6 +502,12 @@ fn initial_web_deploy() -> Result<(), Box<dyn Error>> {
     let state_path = default_storage_path("webapp.state");
     merge_state(&webapp_metadata, &webapp_archive, &state_path)?;
 
+    // Initialize version file if it doesn't exist
+    let version_path = default_storage_path("version");
+    if !version_path.exists() {
+        fs::write(&version_path, "2")?;
+    }
+
     fdev_publish(contract_wasm, webapp_parameters, state_path)?;
 
     Ok(())
