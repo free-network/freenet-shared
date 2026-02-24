@@ -453,12 +453,12 @@ fn deploy(version: u32) -> Result<(), Box<dyn Error>> {
     let state_path = default_storage_path("webapp.state");
     merge_state(&webapp_metadata, &webapp_archive, &state_path)?;
 
-    fdev_publish(contract_wasm, webapp_parameters, state_path)?;
-
     fs::write(
         default_storage_path("version"),
         (version_chosen + 1).to_string(),
     )?;
+
+    fdev_publish(contract_wasm, webapp_parameters, state_path)?;
 
     Ok(())
 }
