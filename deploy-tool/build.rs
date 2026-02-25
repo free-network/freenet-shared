@@ -43,6 +43,7 @@ fn main() {
     let status = Command::new(env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
         .env("CARGO_TARGET_DIR", &nested_target_dir)
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
+        .env_remove("CARGO_BUILD_TARGET")
         .args([
             "build",
             "--release",
