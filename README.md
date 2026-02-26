@@ -36,5 +36,5 @@ deploy-tool initial-web-deploy
 Deploy your ap:
 
 ```
-deploy-tool app
+deploy-tool deploy
 ```
