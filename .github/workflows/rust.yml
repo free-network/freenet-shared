@@ -1,0 +1,42 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "trunk" ]
+  pull_request:
+    branches: [ "trunk" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: cachix/install-nix-action@v31
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build
+      run: nix develop --command cargo build --verbose --release
+    - name: Run tests
+      run: nix develop --command cargo test --verbose
+    - name: Build package
+      run: nix build
+    - name: Flake check
+      run: nix flake check
+    - name: Upload deploy-tool
+      uses: actions/upload-artifact@v4
+      with:
+        name: deploy-tool
+        path: target/release/deploy-tool
+    - name: Upload web-container-tool
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-container-tool
+        path: target/release/web-container-tool
+
