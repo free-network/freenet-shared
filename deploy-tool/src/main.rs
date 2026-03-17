@@ -194,6 +194,8 @@ enum Commands {
     InitialWebDeploy {},
     /// Get web contract id
     GetWebContractId {},
+    /// Publish contract with given parameters and state
+    Publish {},
 }
 
 fn execute(cmd: &mut Command) -> Result<(), Box<dyn Error>> {
@@ -540,6 +542,13 @@ fn merge_state(
     Ok(())
 }
 
+fn publish() -> Result<(), Box<dyn Error>> {
+    let contract = default_storage_path("web.contract.wasm");
+    let parameters = default_storage_path("webapp.parameters");
+    let state = default_storage_path("webapp.state");
+    fdev_publish(contract, parameters, state)
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     init_config()?;
 
@@ -549,5 +558,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         Commands::Dev {} => dev(),
         Commands::InitialWebDeploy {} => initial_web_deploy(),
         Commands::GetWebContractId {} => get_web_contract_id(),
+        Commands::Publish {} => publish(),
     }
 }
