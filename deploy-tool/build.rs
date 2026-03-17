@@ -34,22 +34,21 @@ fn main() {
     }
 
     // Copy the wasm to OUT_DIR so include_bytes! can find it
-    let wasm_src = nested_target_dir.join("wasm32-unknown-unknown/release/web_container_contract.wasm");
+    let wasm_src =
+        nested_target_dir.join("wasm32-unknown-unknown/release/web_container_contract.wasm");
     let wasm_dst = out_dir.join("web_container_contract.wasm");
     fs::copy(&wasm_src, &wasm_dst).expect("Failed to copy wasm to OUT_DIR");
-    println!("cargo:rustc-env=BUNDLED_CONTRACT_PATH={}", wasm_dst.display());
+    println!(
+        "cargo:rustc-env=BUNDLED_CONTRACT_PATH={}",
+        wasm_dst.display()
+    );
 
     // Build web-container-tool for native target
     let status = Command::new(env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
         .env("CARGO_TARGET_DIR", &nested_target_dir)
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .env_remove("CARGO_BUILD_TARGET")
-        .args([
-            "build",
-            "--release",
-            "--package",
-            "web-container-tool",
-        ])
+        .args(["build", "--release", "--package", "web-container-tool"])
         .status()
         .expect("Failed to build web-container-tool");
 

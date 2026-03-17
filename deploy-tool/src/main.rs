@@ -84,15 +84,15 @@ fn read_config() -> Result<Config, Box<dyn Error>> {
 /// Initializes the global config. Must be called before using `config()`.
 fn init_config() -> Result<(), Box<dyn Error>> {
     let cfg = read_config()?;
-    CONFIG
-        .set(cfg)
-        .map_err(|_| "Config already initialized")?;
+    CONFIG.set(cfg).map_err(|_| "Config already initialized")?;
     Ok(())
 }
 
 /// Returns a reference to the global config.
 pub fn config() -> &'static Config {
-    CONFIG.get().expect("Config not initialized. Call init_config() first.")
+    CONFIG
+        .get()
+        .expect("Config not initialized. Call init_config() first.")
 }
 
 fn default_storage_path(file: &str) -> PathBuf {
@@ -412,8 +412,10 @@ fn deploy(version: u32) -> Result<(), Box<dyn Error>> {
     let webapp_parameters = default_storage_path("webapp.parameters");
 
     let version_path = default_storage_path("version");
-    let version_saved = std::fs::read_to_string(&version_path)
-        .expect(&format!("version file not found: {}", version_path.display()));
+    let version_saved = std::fs::read_to_string(&version_path).expect(&format!(
+        "version file not found: {}",
+        version_path.display()
+    ));
     let version_parsed: u32 = version_saved.trim().parse().unwrap();
     let version_chosen = std::cmp::max(version_parsed, version);
 
@@ -426,11 +428,7 @@ fn deploy(version: u32) -> Result<(), Box<dyn Error>> {
             let repo_root = get_repo_root()?;
             let static_path = repo_root.join(folder);
             if !static_path.exists() {
-                return Err(format!(
-                    "Static folder not found: {}",
-                    static_path.display()
-                )
-                .into());
+                return Err(format!("Static folder not found: {}", static_path.display()).into());
             }
             static_path
         }
